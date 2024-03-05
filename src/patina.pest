@@ -1,0 +1,90 @@
+WHITESPACE = _{ " " | "\t" }
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE)}
+Delimeter = _{ NEWLINE | ";" }
+Seperator = _ { (NEWLINE+) | (NEWLINE* ~ "," ~ NEWLINE*) }
+
+Program = { SOI ~ NEWLINE* ~ (Fundament ~ NEWLINE*)+ ~ EOI} // todo support semicolon between consts and statics
+Fundament = _{ Fn | Struct | Declare }
+Fn = { "fn" ~ Ident ~ "(" ~ (TypedIdent ~ ("," ~ TypedIdent))? ~")" ~ ("->" ~ Type)? ~ "{" ~ Body ~ "}" }
+Struct = {"struct" ~ Ident ~ NEWLINE* ~ "{" ~ NEWLINE* ~ (TypedIdent ~ (Seperator ~ TypedIdent)*) ~ Seperator? ~ "}"}
+Declare = { (Const | Static | Let) ~ Ident ~ (":" ~ Type)? ~ "=" ~ Expr}
+
+Const = { "const" }
+Static = { "static" }
+Let = { "let" }
+
+Ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+Type = { Ref? ~ Ident }
+TypedIdent = _{ Ident ~ ":" ~ Type }
+
+Body = { Delimeter* ~ (Stmt ~ Delimeter*)* }
+
+Stmt = _{ Declare | Assign | Return | Break | If | Loop | Call }
+
+Assign = { Target ~ "=" ~ Expr }
+Return = { "return" ~ Expr? }
+Break = { "break" ~ Expr? }
+/* Expressions that MAY return void. They can be used as statements*/
+If = {"if" ~ Expr ~ "{" ~ Body ~ "}" ~ Elif* ~ Else?}
+Elif = _{"else if" ~ Expr ~ "{" ~ Body ~ "}"}
+Else = _{"else" ~ "{" ~ Body ~ "}"}
+Loop = {"loop" ~ "{" ~ Body ~ "}"}
+Call = { Ident ~ "(" ~  (Expr ~ ("," ~ Expr)*)? ~ ")"}
+
+/* Expressions that never return void. They can NEVER be used as statements*/
+Expr = { Atom ~ (BinOp ~ Atom)* }
+Target = ${ Deref? ~ Ident ~ ("." ~ Ident)* }
+Atom = _{ UnOp? ~ Primary } // todo multiple unary operators?
+Primary = ${ (If | Loop | Call | Literal | Ident | NestedExpr) ~ ("." ~ Ident)* }
+NestedExpr = !{"(" ~ Expr ~ ")"}
+
+Literal = _{ True | False | FloatLiteral | IntLiteral | StructLiteral }
+True = {"true"}
+False = {"false"}
+IntLiteral = ${ IntValue ~ ( I8 | I16 | I32 | I64 | U8 | U16 | U32 | U64 )?}
+IntValue = ${ASCII_DIGIT+}
+I8 = {"i8"}
+I16 = {"i16"}
+I32 = {"i32"}
+I64 = {"i64"} 
+U8 = {"u8"}
+U16 = {"u16"}
+U32 = {"u32"} 
+U64 = {"u64"}
+
+FloatLiteral = ${ FloatValue ~ ( F32 | F64 )? }
+FloatValue = ${ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+F32 = {"f32"}
+F64 = {"f64"}
+
+StructLiteral = !{ Ident ~ NEWLINE*  ~ "{" ~  NEWLINE* ~ Ident ~ ":" ~ Expr ~ (Seperator ~ Ident ~ ":" ~ Expr)* ~ Seperator? ~ "}"}
+BinOp = _{ Add | Sub | Mul | Div | Ge | Gt | Le | Lt | Eq | Ne | And | Or }
+Add = { "+" }
+Sub = { "-" }
+Mul = { "*" }
+Div = { "/" }
+Ge = { ">=" }
+Gt = { ">" }
+Le = { "<=" }
+Lt = { "<" }
+Eq = { "==" }
+Ne = { "!=" }
+And = { "&&" }
+Or = { "||" }
+
+UnOp = _{ Neg | Not | Ref | Deref }
+Neg = { "-" }
+Not = {"!"}
+Ref = { Shared | Unique | Borrow }
+Shared = { "@" }
+Unique = { "~" }
+Borrow = { "&" }
+Deref = { "*" }
+
+
+
+
+
+
+
+
