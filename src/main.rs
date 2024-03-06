@@ -1,6 +1,5 @@
 mod syntax;
 mod semantic;
-mod llvm;
 mod ast;
 mod test;
 mod error;
@@ -25,7 +24,6 @@ fn compile(src: &'static str) -> Result<()>{
     // lexical and syntax analysis
     let ast = syntax::parse(src)?;
     let tast = semantic::analyze(ast)?;
-    llvm::codegen(tast);
     Ok(())
 }
 

@@ -23,9 +23,9 @@ pub fn analyze(ast: Vec<Node>) -> Result<TypedAst> {
     let errors = env.errors.borrow();
     if !errors.is_empty() {
         if errors.len() == 1 {
-            Err(errors.first().unwrap());
+            Err(errors.first().unwrap().clone())
         } else {
-            Err(Error::Multiple(errors.iter().collect()))
+            Err(Error::Multiple(errors.clone().into_iter().collect()))
         }
     } else {
         let typed_ast = TypedAst {
@@ -57,7 +57,7 @@ struct Env {
 }
 
 #[derive(Clone)]
-struct Structure {
+pub struct Structure {
     name: &'static str,
     fields: HashMap<&'static str, Variable>,
 }
@@ -199,12 +199,12 @@ impl Env {
         }
 
         for func in funcs_to_analyze.iter_mut() {
-            self.analyze_fn(func)
+            self.analyze_fn(func);
         }
 
         // storing results in env is hella weird
         for func in funcs_to_analyze {
-            self.funcs.insert(func.name, func)
+            self.funcs.insert(func.name, func);
         }
 
     }

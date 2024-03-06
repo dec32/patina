@@ -1,6 +1,8 @@
 use core::fmt;
+use std::fmt::Write;
 use crate::syntax::Rule;
 
+#[derive(Clone)]
 pub enum Error {
     // todo use this error or anyhow
     Multiple(Vec<Error>),
@@ -21,6 +23,7 @@ impl fmt::Debug for Error {
             Self::Multiple(errors) => {
                 for error in errors {
                     error.fmt(f)?;
+                    f.write_char('\n')?;
                 }
                 Ok(())
             },

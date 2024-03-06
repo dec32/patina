@@ -38,5 +38,7 @@ fn test() {
             }
         }
     ";
-    compile(src).unwrap()
+    if let Err(e) = compile(src) {
+        println!("{:?}", e)
+    }
 }

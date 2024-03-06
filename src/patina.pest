@@ -1,7 +1,7 @@
 WHITESPACE = _{ " " | "\t" }
 COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE)}
 Delimeter = _{ NEWLINE | ";" }
-Seperator = _ { (NEWLINE+) | (NEWLINE* ~ "," ~ NEWLINE*) }
+Seperator = _{ (NEWLINE+) | (NEWLINE* ~ "," ~ NEWLINE*) }
 
 Program = { SOI ~ NEWLINE* ~ (Fundament ~ NEWLINE*)+ ~ EOI} // todo support semicolon between consts and statics
 Fundament = _{ Fn | Struct | Declare }
