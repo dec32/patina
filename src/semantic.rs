@@ -469,17 +469,14 @@ impl Env {
                         if right.ty != Bool {
                             self.report("not a bool", line_col);
                         }
-                        Bool.into()
+                        Bool
                     },
-                    SharedRef | UniqueRef | BorrowRef => {
+                    Refer => {
                         if right.ty.is_ref() {
                             self.report("high-order reference is not allowed", line_col);
-                        }
-                        match op {
-                            SharedRef => Shared(Box::new(right.ty.clone())),
-                            BorrowRef => Borrow(Box::new(right.ty.clone())),
-                            UniqueRef => Unique(Box::new(right.ty.clone())),
-                            _ => unreachable!()
+                            right.ty.clone()
+                        } else {
+                            Ref(Box::new(right.ty.clone()))
                         }
                     },
                     Deref => {

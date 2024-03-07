@@ -197,12 +197,7 @@ fn parse_expr(pair: Pair<'static, Rule>) -> Node {
                 Rule::Neg => UnOp(UnOperator::Neg, right),
                 Rule::Deref => UnOp(UnOperator::Deref, right),
                 Rule::Not => UnOp(UnOperator::Not, right),
-                Rule::Ref => match op.into_inner().next().unwrap().as_rule() {
-                    Rule::Borrow => UnOp(UnOperator::BorrowRef, right),
-                    Rule::Unique => UnOp(UnOperator::UniqueRef, right),
-                    Rule::Shared => UnOp(UnOperator::SharedRef, right),
-                    _ => unreachable!()
-                },
+                Rule::Ref => UnOp(UnOperator::Refer, right),
                 rule => unreachable!("Reached {:?}", rule)
             }.at(line_col)
         })
@@ -276,21 +271,19 @@ fn parse_lvalue(pair: Pair<'static, Rule>) -> Node {
 
 fn parse_type(pair: Pair<'static, Rule>) -> Type {
     let pairs = pair.into_inner();
-    let mut ref_pair = None;
+    let mut is_ref = false;
     let mut ty = None;
     for pair in pairs {
         match pair.as_rule() {
-            Rule::Ref => ref_pair = Some(pair),
+            Rule::Ref => is_ref = true,
             Rule::Ident => ty = Some(Type::from(pair.as_str())),
             _ => unreachable!()
         }
     }
     let ty = ty.unwrap();
-    match ref_pair.map(|pair|pair.into_inner().next().unwrap().as_rule()) {
-        None => ty,
-        Some(Rule::Borrow) => Type::Borrow(Box::new(ty)),
-        Some(Rule::Unique) => Type::Unique(Box::new(ty)),
-        Some(Rule::Shared) => Type::Shared(Box::new(ty)),
-        Some(_) => unreachable!()
+    if is_ref {
+        Type::Ref(Box::new(ty))
+    } else {
+        ty
     }
 }

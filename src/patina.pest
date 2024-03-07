@@ -75,10 +75,7 @@ Or = { "||" }
 UnOp = _{ Neg | Not | Ref | Deref }
 Neg = { "-" }
 Not = {"!"}
-Ref = { Shared | Unique | Borrow }
-Shared = { "@" }
-Unique = { "~" }
-Borrow = { "&" }
+Ref = { "&" }
 Deref = { "*" }
 
 

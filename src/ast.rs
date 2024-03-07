@@ -154,7 +154,7 @@ impl Variable {
         if self.ty == Type::Unknown {
             self.name
         } else {
-            format!("{}: {}", self.name, self.ty.as_str()).leak()
+            format!("{}:{}", self.name, self.ty.as_str()).leak()
         }
     }
 }
@@ -175,9 +175,7 @@ impl Type {
             Type::I64 => "i64",
             Type::F32 => "f32",
             Type::F64 => "f64",
-            Type::Borrow(ty) => ty.as_str(),
-            Type::Unique(ty) => ty.as_str(),
-            Type::Shared(ty) => ty.as_str(),
+            Type::Ref(ty) => format!("&{}", ty.as_str()).leak(),
             Type::Defined(name) => name,
         }
     }
@@ -189,9 +187,7 @@ impl UnOperator {
             Neg => "−",
             Deref => "deref",
             Not => "¬",
-            SharedRef => "share",
-            UniqueRef => "box",
-            BorrowRef => "borrow",
+            Refer => "ref"
         }
     }
 }

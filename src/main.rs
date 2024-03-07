@@ -86,7 +86,7 @@ impl Syntax {
 pub enum BinOperator{ Ge, Gt, Le, Lt, Mul, Div, Add, Sub, Ne, Eq, And, Or }
 
 #[derive(Debug)]
-pub enum UnOperator{ Neg, Deref, Not, SharedRef, UniqueRef, BorrowRef }
+pub enum UnOperator{ Neg, Not, Refer, Deref }
 
 #[derive(Debug)]
 pub struct Func {
@@ -137,9 +137,7 @@ enum Type {
     U8, U16, U32, U64,
     I8, I16, I32, I64,
     F32, F64,
-    Borrow(Box<Type>),
-    Unique(Box<Type>), 
-    Shared(Box<Type>),
+    Ref(Box<Type>),
     Defined(&'static str), 
 }
 
@@ -158,9 +156,7 @@ impl Type {
             (F32,            F32 | F64) => true,
             (F64,                  F64) => true,
             (Defined(s), Defined(o)) => s == o,
-            (Borrow(s), Borrow(o)) => s.is(o),
-            (Unique(s), Unique(o)) => s.is(o),
-            (Shared(s), Shared(o)) => s.is(o),
+            (Ref(s), Ref(o)) => s.is(o),
             _ => false,
         }
     }
@@ -179,9 +175,7 @@ impl Type {
             (F32,            F32 | F64) => Some(t1.clone()),
             (F64,                  F64) => Some(t1.clone()),
             (Defined(s0), Defined(s1)) => if s0 == s1 { Some(t1.clone()) } else { None },
-            (Borrow(t0), Borrow(t1)) => Type::supertype(t0, t1).map(|ty|Borrow(Box::new(ty))),
-            (Unique(t0), Unique(t1)) => Type::supertype(t0, t1).map(|ty|Unique(Box::new(ty))),
-            (Shared(t0), Shared(t1)) => Type::supertype(t0, t1).map(|ty|Shared(Box::new(ty))),
+            (Ref(t0), Ref(t1)) => Type::supertype(t0, t1).map(|ty|Ref(Box::new(ty))),
             _ => None,
         }
 
@@ -189,7 +183,7 @@ impl Type {
 
     fn is_ref(&self) -> bool {
         use Type::*;
-        matches!(self, Borrow(_) | Unique(_) | Shared(_))
+        matches!(self, Ref(_))
     }
 
     fn is_primitive(&self) -> bool {
@@ -210,7 +204,7 @@ impl Type {
     fn value_type(&self) -> Type {
         use Type::*;
         match self {
-            Borrow(ty) | Unique(ty) | Shared(ty) => *ty.clone(),
+            Ref(ty) => *ty.clone(),
             other => other.clone()
         }
     }
