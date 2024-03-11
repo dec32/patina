@@ -17,15 +17,15 @@ use crate::Declarer::*;
 use crate::Variable;
 
 
-pub fn analyze(ast: Vec<Node>) -> Result<TypedAst> {
+pub fn check(ast: Vec<Node>) -> Result<TypedAst> {
     let mut env = Env::new();
-    env.analyze_program(ast);
-    let errors = env.errors.borrow();
+    env.check_program(ast);
+    let errors = env.errors.replace(Vec::new());
     if !errors.is_empty() {
         if errors.len() == 1 {
             Err(errors.first().unwrap().clone())
         } else {
-            Err(Error::Multiple(errors.clone().into_iter().collect()))
+            Err(Error::Multiple(errors))
         }
     } else {
         let typed_ast = TypedAst {
@@ -120,7 +120,7 @@ impl Env {
         }
     }
 
-    fn analyze_program(&mut self, nodes: Vec<Node>) {
+    fn check_program(&mut self, nodes: Vec<Node>) {
         let mut struct_names = HashSet::new();
         for node in nodes.iter() {
             let Struct(struct_syntax) = &*node.syntax else {
@@ -199,7 +199,7 @@ impl Env {
         }
 
         for func in funcs_to_analyze.iter_mut() {
-            self.analyze_fn(func);
+            self.check_fn(func);
         }
 
         // storing results in env is hella weird
@@ -209,18 +209,18 @@ impl Env {
 
     }
 
-    fn analyze_fn(&mut self, func: &mut Func) {
+    fn check_fn(&mut self, func: &mut Func) {
         self.expected_return_type = func.return_type.clone();
         self.variables.push_scope();
         for var in self.signatures.get(&func.name).unwrap().params.iter() {
             self.variables.insert(var.name, var.clone())   
         }
-        self.analyze_body(&mut func.body);
+        self.check_body(&mut func.body);
         self.variables.pop_scope();
     }
 
 
-    fn analyze_body(&mut self, body: &mut Vec<Node>) {
+    fn check_body(&mut self, body: &mut Vec<Node>) {
         self.variables.push_scope();
         for node in body {
             let line_col = node.line_col;
@@ -229,6 +229,9 @@ impl Env {
                     match declarer {
                         Const | Static => self.report("not allowed here", line_col),
                         Let => ()
+                    }
+                    if self.variables.get(&variable.name).is_some() {
+                        self.report("variable already defined", line_col)
                     }
                     self.infer_type(value);
                     if variable.ty == Unknown {
@@ -244,9 +247,6 @@ impl Env {
                             self.report("mismatched types", value.line_col);
                         }
                     }
-                    if self.variables.get(&variable.name).is_some() {
-                        self.report("variable already defined", line_col)
-                    }
                     self.variables.insert(variable.name, variable.clone());
                 },
                 Assign { lvalue: target, value } => {
@@ -256,7 +256,6 @@ impl Env {
                         self.report("mismatched type", value.line_col)
                     }
                 },
-                
                 Break(value) => {
                     if !self.looping {
                         self.report("not inside a loop", line_col)
@@ -510,15 +509,15 @@ impl Env {
                     if branch.predicate.ty != Bool.into() {
                         self.report("bool is required for condition", line_col);
                     }
-                    self.analyze_body(&mut branch.body);
+                    self.check_body(&mut branch.body);
                 }
-                self.analyze_body(default);
+                self.check_body(default);
                 Void.into()
             },
             Loop { body } => {
                 let outer_loop = !self.looping;
                 self.looping = true;
-                self.analyze_body(body);
+                self.check_body(body);
                 if outer_loop {
                     self.looping = false;
                 }

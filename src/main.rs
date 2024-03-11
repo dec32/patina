@@ -23,7 +23,7 @@ fn main(){
 fn compile(src: &'static str) -> Result<()>{
     // lexical and syntax analysis
     let ast = syntax::parse(src)?;
-    let tast = semantic::analyze(ast)?;
+    let tast = semantic::check(ast)?;
     Ok(())
 }
 
